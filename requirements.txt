@@ -1,0 +1,11 @@
+# Data manipulation
+pandas>=2.0
+numpy>=1.24
+
+# Visualization
+matplotlib>=3.7
+seaborn>=0.12
+
+# Notebook
+jupyterlab>=4.0
+ipykernel>=6.20
