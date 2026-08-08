@@ -1,3 +1,4 @@
 data/
 .atl/
 .env
+.venv/
