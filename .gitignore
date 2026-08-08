@@ -1,4 +1,7 @@
-data/
+# Datos del proyecto
+data/*
+!data/home_credit.png
+
 .atl/
 .env
 .venv/
