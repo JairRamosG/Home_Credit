@@ -6,6 +6,9 @@ numpy>=1.24
 matplotlib>=3.7
 seaborn>=0.12
 
+# Machine Learning
+scikit-learn>=1.3
+
 # Notebook
 jupyterlab>=4.0
 ipykernel>=6.20
