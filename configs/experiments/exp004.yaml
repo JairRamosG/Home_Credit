@@ -1,0 +1,85 @@
+# ============================================================
+# Experimento 004: Random Forest + Top 30 Route B
+# ============================================================
+# Descripción: Random Forest con las 30 features más importantes
+#              de Ruta B. Balance entre complejidad (109 features)
+#              y simplicidad (14 features).
+# ============================================================
+
+experiment:
+  name: "exp004_random_forest_top30"
+  description: "Random Forest con Top 30 features de Ruta B"
+  version: "1.0"
+  author: "Home Credit Team"
+
+# ------------------------------------------------------------
+# Datos
+# ------------------------------------------------------------
+data:
+  dataset: "application_train_preprocessed.csv"
+  features_file: "features_top30_route_b.txt"  # Top 30 features por importancia
+  target: "TARGET"
+  id_column: "SK_ID_CURR"
+  
+  test_size: 0.2
+  random_state: 42
+  stratify: true
+
+# ------------------------------------------------------------
+# Modelo
+# ------------------------------------------------------------
+model:
+  name: "sklearn.ensemble.RandomForestClassifier"
+  description: "Random Forest con las 30 features más importantes"
+  
+  params:
+    n_estimators: 200
+    max_depth: 10
+    min_samples_split: 10
+    min_samples_leaf: 5
+    class_weight: "balanced"
+    random_state: 42
+    n_jobs: -1
+
+# ------------------------------------------------------------
+# Métricas a evaluar
+# ------------------------------------------------------------
+metrics:
+  primary: "roc_auc"
+  
+  all:
+    - name: "accuracy"
+      description: "Exactitud general"
+    - name: "precision"
+      description: "¿Cuántos predichos como default realmente lo son?"
+    - name: "recall"
+      description: "¿Cuántos defaults reales detectamos?"
+    - name: "f1"
+      description: "Balance precision/recall"
+    - name: "roc_auc"
+      description: "Área bajo la curva ROC (principal)"
+
+# ------------------------------------------------------------
+# MLflow Tracking
+# ------------------------------------------------------------
+mlflow:
+  experiment_name: "home_credit_default"
+  
+  tags:
+    feature_set: "top30_route_b"
+    feature_count: 30
+    model_type: "tree_based"
+    notebook_source: "07_feature_selection.ipynb"
+
+# ------------------------------------------------------------
+# Output
+# ------------------------------------------------------------
+output:
+  save_model: true
+  model_path: "models/exp004_random_forest_top30.pkl"
+  
+  save_predictions: true
+  predictions_path: "experiments/results/exp004_predictions.csv"
+  
+  save_feature_importance: true
+  feature_importance_path: "experiments/results/exp004_feature_importance.csv"
