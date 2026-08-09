@@ -1,0 +1,82 @@
+# ============================================================
+# Experimento 001: Logistic Regression + Ruta A
+# ============================================================
+# Descripción: Modelo lineal con las 14 features que pasaron
+#              tests estadísticos Y son útiles en contexto RF.
+#              Set conservador, bajo riesgo.
+# ============================================================
+
+experiment:
+  name: "exp001_logistic_route_a"
+  description: "Logistic Regression con 14 features de Ruta A (tests + RF importance)"
+  version: "1.0"
+  author: "Jair"
+
+# ------------------------------------------------------------
+# Datos
+# ------------------------------------------------------------
+data:
+  dataset: "application_train_preprocessed.csv"
+  features_file: "features_route_a.txt"  # 14 features
+  target: "TARGET"
+  id_column: "SK_ID_CURR"
+  
+  # Split
+  test_size: 0.2
+  random_state: 42
+  stratify: true  # Mantener proporción del target en train/test
+
+# ------------------------------------------------------------
+# Modelo
+# ------------------------------------------------------------
+model:
+  name: "sklearn.linear_model.LogisticRegression"
+  description: "Regresión logística con regularización L2"
+  
+  params:
+    C: 1.0              # Regularización (menor = más regularización)
+    penalty: "l2"       # Regularización Ridge
+    class_weight: "balanced"  # Manejar desbalanceo (92% / 8%)
+    solver: "lbfgs"     # Solver para datasets pequeños/medianos
+    max_iter: 1000      # Aumentar por si no converge
+    random_state: 42
+
+# ------------------------------------------------------------
+# Métricas a evaluar
+# ------------------------------------------------------------
+metrics:
+  primary: "roc_auc"  # Métrica principal para comparar
+  
+  all:
+    - name: "accuracy"
+      description: "Exactitud general"
+    - name: "precision"
+      description: "¿Cuántos predichos como default realmente lo son?"
+    - name: "recall"
+      description: "¿Cuántos defaults reales se detectaron?"
+    - name: "f1"
+      description: "Balance precision/recall"
+    - name: "roc_auc"
+      description: "Área bajo la curva ROC (principal)"
+
+# ------------------------------------------------------------
+# MLflow Tracking
+# ------------------------------------------------------------
+mlflow:
+  experiment_name: "home_credit_default"
+  
+  tags:
+    feature_set: "route_a"
+    feature_count: 14
+    model_type: "linear"
+    notebook_source: "07_feature_selection.ipynb"
+
+# ------------------------------------------------------------
+# Output
+# ------------------------------------------------------------
+output:
+  save_model: true
+  model_path: "models/exp001_logistic_route_a.pkl"
+  
+  save_predictions: true
+  predictions_path: "experiments/results/exp001_predictions.csv"
