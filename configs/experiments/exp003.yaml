@@ -10,7 +10,7 @@ experiment:
   name: "exp003_xgboost_intersection"
   description: "XGBoost con 14 features de intersección (Route A ∩ Route B)"
   version: "1.0"
-  author: "Home Credit Team"
+  author: "Jair"
 
 # ------------------------------------------------------------
 # Datos

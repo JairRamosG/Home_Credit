@@ -10,7 +10,7 @@ experiment:
   name: "exp002_random_forest_route_b"
   description: "Random Forest con 109 features de Ruta B (RF importance directo)"
   version: "1.0"
-  author: "Home Credit Team"
+  author: "Jair"
 
 # ------------------------------------------------------------
 # Datos
