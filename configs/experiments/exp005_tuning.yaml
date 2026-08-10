@@ -1,24 +1,26 @@
 # ============================================================
-# Experimento 005: XGBoost Tuning con GridSearchCV
+# Experimento 005: Tuning de XGBoost (basado en exp005_inicial)
 # ============================================================
+# ETAPA 2: Tuneo de Hiperparámetros
 # Descripción: Tuning de hiperparámetros para XGBoost usando
 #              GridSearchCV con 5-fold cross-validation.
-#              Usa las mismas features que exp005.
+#              Basado en exp005_inicial (XGBoost + 109 features).
 # ============================================================
 
 experiment:
   name: "exp005_xgboost_tuning"
-  description: "Tuning de XGBoost con GridSearchCV (5-fold CV)"
-  version: "1.0"
-  author: "Home Credit Team"
-  base_experiment: "exp005"  # Experimento base que se está tuneando
+  description: "Tuning de XGBoost con GridSearchCV (5-fold CV) — basado en exp005_inicial"
+  version: "3.0"
+  author: "Jair"
+  stage: "etapa_2"
+  base_experiment: "exp005_inicial"  # Experimento base que se está tuneando
 
 # ------------------------------------------------------------
-# Datos
+# Datos — 2-way split (train/test)
 # ------------------------------------------------------------
 data:
   dataset: "application_train_preprocessed.csv"
-  features_file: "features_route_b.txt"  # 109 features (mismo que exp005)
+  features_file: "features_route_b.txt"  # 109 features (mismo que exp005_inicial)
   target: "TARGET"
   id_column: "SK_ID_CURR"
   
@@ -34,10 +36,12 @@ model:
   description: "XGBoost — hiperparámetros definidos por GridSearchCV"
   
   # Params base (se usan como referencia, no para entrenar)
+  # scale_pos_weight es CRÍTICO para manejar desbalanceo (92% vs 8%)
   params:
     random_state: 42
     n_jobs: -1
-    eval_metric: "auc"
+    eval_metric: "auc"  # XGBoost solo acepta: auc, logloss, error, etc.
+    scale_pos_weight: 11.38  # ratio = 282686/24825 (balancear clases)
 
 # ------------------------------------------------------------
 # GridSearchCV
@@ -57,7 +61,7 @@ tuning:
   
   # Configuración de CV
   cv: 5
-  scoring: "roc_auc"
+  scoring: "recall"  # sklearn sí acepta "recall"
   n_jobs: -1
   verbose: 1
   
@@ -68,7 +72,7 @@ tuning:
 # Métricas a evaluar
 # ------------------------------------------------------------
 metrics:
-  primary: "roc_auc"
+  primary: "recall"
   
   all:
     - name: "accuracy"
@@ -80,7 +84,7 @@ metrics:
     - name: "f1"
       description: "Balance precision/recall"
     - name: "roc_auc"
-      description: "Área bajo la curva ROC (principal)"
+      description: "Área bajo la curva ROC"
 
 # ------------------------------------------------------------
 # MLflow Tracking
@@ -95,6 +99,8 @@ mlflow:
     tuning_method: "grid_search_cv"
     cv_folds: 5
     notebook_source: "07_feature_selection.ipynb"
+    version: "3.0"
+    stage: "etapa_2"
 
 # ------------------------------------------------------------
 # Output
