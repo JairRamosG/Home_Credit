@@ -6,12 +6,16 @@ Ejecuta el pipeline completo de un experimento:
 1. Carga la configuración desde YAML
 2. Carga y prepara los datos
 3. Entrena el modelo
-4. Evalúa el rendimiento
+4. Evalúa el rendimiento en TEST SET
 5. Registra todo en MLflow
+
+IMPORTANTE: Este script evalúa en el TEST SET (evaluación final).
+Para threshold tuning, usar tune_threshold.py (usa validation set).
 
 Uso:
     python experiments/run_experiment.py exp001
     python experiments/run_experiment.py exp002
+    python experiments/run_experiment.py exp009  # evaluación final con threshold
     python experiments/run_experiment.py --all
 """
 
@@ -60,17 +64,24 @@ def log_to_mlflow(config: dict, metrics: dict, pipeline, run_name: str):
             "dataset": config["data"]["dataset"],
             "features_file": config["data"]["features_file"],
             "test_size": config["data"]["test_size"],
-            "random_state": config["data"]["random_state"]
+            "random_state": config["data"]["random_state"],
+            "validation_size": config["data"].get("validation_size", "N/A")
         })
         
-        # 3. Loggear métricas
+        # 3. Loggear threshold si está configurado
+        threshold = config.get("evaluation", {}).get("threshold", None)
+        if threshold is not None:
+            mlflow.log_param("threshold", float(threshold))
+            mlflow.log_param("eval_set", "test")
+        
+        # 4. Loggear métricas
         mlflow.log_metrics(metrics)
         
-        # 4. Loggear tags
+        # 5. Loggear tags
         if "tags" in config["mlflow"]:
             mlflow.set_tags(config["mlflow"]["tags"])
         
-        # 5. Loggear modelo
+        # 6. Loggear modelo
         model_name = config["model"]["name"].lower()
         
         # XGBoost necesita trusted types para skops
@@ -89,7 +100,7 @@ def log_to_mlflow(config: dict, metrics: dict, pipeline, run_name: str):
         
         mlflow.sklearn.log_model(**log_kwargs)
         
-        # 6. Loggear features utilizadas
+        # 7. Loggear features utilizadas
         features = config["data"]["features_file"]
         mlflow.log_param("features_count", len(open(PROJECT_ROOT / "data/processed" / features).readlines()))
         
@@ -101,6 +112,8 @@ def log_to_mlflow(config: dict, metrics: dict, pipeline, run_name: str):
 def run_experiment(experiment_name: str, verbose: bool = True):
     """
     Ejecuta un experimento completo.
+    
+    IMPORTANTE: Evalúa en el TEST SET (evaluación final).
     
     Args:
         experiment_name: Nombre del experimento (ej: "exp001")
@@ -116,16 +129,26 @@ def run_experiment(experiment_name: str, verbose: bool = True):
     # 1. Cargar configuración y datos
     config, df, features = load_experiment(experiment_name)
     
-    # 2. Preparar datos (select features + split)
-    X_train, X_test, y_train, y_test = prepare_data(config, df, features)
+    # 2. Preparar datos (con 3-way split si validation_size está definido)
+    result = prepare_data(config, df, features)
     
-    # 3. Entrenar modelo
+    # 3. Manejar según el tipo de split
+    if len(result) == 6:
+        # 3-way split: train/val/test
+        X_train, X_val, X_test, y_train, y_val, y_test = result
+        print(f"\n✓ Evaluando en TEST SET (3-way split)")
+    else:
+        # 2-way split: train/test
+        X_train, X_test, y_train, y_test = result
+        print(f"\n✓ Evaluando en TEST SET (2-way split)")
+    
+    # 4. Entrenar modelo (solo en train)
     pipeline = train_model(config, X_train, y_train)
     
-    # 4. Evaluar modelo
+    # 5. Evaluar modelo en TEST SET
     metrics = evaluate_model(pipeline, X_test, y_test, config, verbose=verbose)
     
-    # 5. Registrar en MLflow
+    # 6. Registrar en MLflow
     model_name = get_model_name(config)
     run_name = f"{experiment_name}_{model_name}"
     

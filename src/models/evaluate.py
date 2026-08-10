@@ -19,24 +19,34 @@ from sklearn.metrics import (
     confusion_matrix
 )
 
-def predict(pipeline, X_test):
+def predict(pipeline, X_test, threshold=None):
     """
     Genera predicciones de clase y probabilidades.
     
     Args:
         pipeline: Pipeline entrenado
         X_test: Features de test
+        threshold: Umbral de clasificación (default: None = usar pipeline.predict)
+                   Si se especifica, se usa predict_proba con este umbral
     
     Returns:
         Diccionario con y_pred y y_prob
     
     Ejemplo:
+        # Sin threshold (comportamiento original)
         predictions = predict(pipeline, X_test)
-        y_pred = predictions['y_pred']
-        y_prob = predictions['y_prob']
+        
+        # Con threshold personalizado
+        predictions = predict(pipeline, X_test, threshold=0.3)
     """
-    y_pred = pipeline.predict(X_test)
     y_prob = pipeline.predict_proba(X_test)[:, 1]  # Probabilidad de clase 1
+    
+    if threshold is not None:
+        # Aplicar umbral personalizado
+        y_pred = (y_prob >= threshold).astype(int)
+    else:
+        # Comportamiento original: usar pipeline.predict()
+        y_pred = pipeline.predict(X_test)
     
     return {
         'y_pred': y_pred,
@@ -100,12 +110,19 @@ def evaluate_model(
         print("Evaluando modelo")
         print("=" * 60)
     
-    # 1. Hacer predicciones
-    predictions = predict(pipeline, X_test)
+    # 1. Obtener threshold del config (default: None = usar pipeline.predict)
+    threshold = config.get("evaluation", {}).get("threshold", None)
+    if threshold is not None:
+        threshold = float(threshold)
+        if verbose:
+            print(f"Usando umbral de clasificación: {threshold}")
+    
+    # 2. Hacer predicciones
+    predictions = predict(pipeline, X_test, threshold=threshold)
     y_pred = predictions['y_pred']
     y_prob = predictions['y_prob']
     
-    # 2. Calcular métricas
+    # 3. Calcular métricas
     metrics = calculate_metrics(y_test, y_pred, y_prob)
     
     if verbose:
