@@ -2,6 +2,9 @@
 data/*
 !data/home_credit.png
 
+# MLflow
+mlruns/
+
 .atl/
 .env
 .venv/

@@ -71,11 +71,23 @@ def log_to_mlflow(config: dict, metrics: dict, pipeline, run_name: str):
             mlflow.set_tags(config["mlflow"]["tags"])
         
         # 5. Loggear modelo
-        mlflow.sklearn.log_model(
-            sk_model=pipeline,
-            artifact_path="model",
-            registered_model_name=config["mlflow"].get("registered_model_name", None)
-        )
+        model_name = config["model"]["name"].lower()
+        
+        # XGBoost necesita trusted types para skops
+        log_kwargs = {
+            "sk_model": pipeline,
+            "artifact_path": "model",
+            "registered_model_name": config["mlflow"].get("registered_model_name", None)
+        }
+        
+        if "xgboost" in model_name:
+            log_kwargs["skops_trusted_types"] = [
+                "xgboost.core.Booster",
+                "xgboost.sklearn.XGBClassifier",
+                "xgboost.sklearn.XGBRegressor"
+            ]
+        
+        mlflow.sklearn.log_model(**log_kwargs)
         
         # 6. Loggear features utilizadas
         features = config["data"]["features_file"]
