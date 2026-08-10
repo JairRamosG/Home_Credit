@@ -142,13 +142,13 @@ def run_experiment(experiment_name: str, verbose: bool = True):
         X_train_full = np.vstack([X_train, X_val])
         y_train_full = np.concatenate([y_train, y_val])
         
-        print(f"\n✓ Evaluando en TEST SET (3-way split)")
+        print(f"\n Evaluando en TEST SET (3-way split)")
         print(f"  - Train: {X_train_full.shape[0]:,} rows (80%)")
         print(f"  - Test: {X_test.shape[0]:,} rows (20%)")
     else:
         # 2-way split: train/test
         X_train_full, X_test, y_train_full, y_test = result
-        print(f"\n✓ Evaluando en TEST SET (2-way split)")
+        print(f"\n Evaluando en TEST SET (2-way split)")
     
     # 4. Entrenar modelo (en train completo = train + val si es 3-way)
     pipeline = train_model(config, X_train_full, y_train_full)
