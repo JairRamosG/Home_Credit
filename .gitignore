@@ -12,3 +12,8 @@ experiments/results/
 .atl/
 .env
 .venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
