@@ -27,6 +27,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+import numpy as np
 import mlflow
 import mlflow.sklearn
 from src.data import load_experiment
@@ -136,14 +137,21 @@ def run_experiment(experiment_name: str, verbose: bool = True):
     if len(result) == 6:
         # 3-way split: train/val/test
         X_train, X_val, X_test, y_train, y_val, y_test = result
+        
+        # Para evaluación final: combinar Train + Validation = Nuevo Train (80%)
+        X_train_full = np.vstack([X_train, X_val])
+        y_train_full = np.concatenate([y_train, y_val])
+        
         print(f"\n✓ Evaluando en TEST SET (3-way split)")
+        print(f"  - Train: {X_train_full.shape[0]:,} rows (80%)")
+        print(f"  - Test: {X_test.shape[0]:,} rows (20%)")
     else:
         # 2-way split: train/test
-        X_train, X_test, y_train, y_test = result
+        X_train_full, X_test, y_train_full, y_test = result
         print(f"\n✓ Evaluando en TEST SET (2-way split)")
     
-    # 4. Entrenar modelo (solo en train)
-    pipeline = train_model(config, X_train, y_train)
+    # 4. Entrenar modelo (en train completo = train + val si es 3-way)
+    pipeline = train_model(config, X_train_full, y_train_full)
     
     # 5. Evaluar modelo en TEST SET
     metrics = evaluate_model(pipeline, X_test, y_test, config, verbose=verbose)
