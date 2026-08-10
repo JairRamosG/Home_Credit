@@ -4,6 +4,10 @@ data/*
 
 # MLflow
 mlruns/
+mlflow.db
+
+# Resultados de experimentos
+experiments/results/
 
 .atl/
 .env
