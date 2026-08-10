@@ -21,10 +21,11 @@ data:
   target: "TARGET"
   id_column: "SK_ID_CURR"
   
-  # Split
+  # Split — 3-way: train (60%) / validation (20%) / test (20%)
   test_size: 0.2
+  validation_size: 0.2
   random_state: 42
-  stratify: true  # Mantener proporción del target en train/test
+  stratify: true
 
 # ------------------------------------------------------------
 # Modelo
@@ -35,7 +36,6 @@ model:
   
   params:
     C: 1.0              # Regularización (menor = más regularización)
-    penalty: "l2"       # Regularización Ridge
     class_weight: "balanced"  # Manejar desbalanceo (92% / 8%)
     solver: "lbfgs"     # Solver para datasets pequeños/medianos
     max_iter: 1000      # Aumentar por si no converge
