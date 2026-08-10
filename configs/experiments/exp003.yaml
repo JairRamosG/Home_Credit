@@ -1,6 +1,7 @@
 # ============================================================
 # Experimento 003: XGBoost + Intersección
 # ============================================================
+# ETAPA 1: Experimentos Iniciales
 # Descripción: Gradient Boosting con las 14 features de la
 #              intersección (misma que Ruta A). Permite comparar
 #              modelo no lineal vs lineal (exp001) con mismas features.
@@ -9,11 +10,12 @@
 experiment:
   name: "exp003_xgboost_intersection"
   description: "XGBoost con 14 features de intersección (Route A ∩ Route B)"
-  version: "1.0"
+  version: "2.0"
   author: "Jair"
+  stage: "etapa_1"
 
 # ------------------------------------------------------------
-# Datos
+# Datos — 2-way split (train/test)
 # ------------------------------------------------------------
 data:
   dataset: "application_train_preprocessed.csv"
@@ -21,8 +23,8 @@ data:
   target: "TARGET"
   id_column: "SK_ID_CURR"
   
+  # Split — 2-way: train (80%) / test (20%)
   test_size: 0.2
-  validation_size: 0.2
   random_state: 42
   stratify: true
 
@@ -73,6 +75,8 @@ mlflow:
     feature_count: 14
     model_type: "gradient_boosting"
     notebook_source: "07_feature_selection.ipynb"
+    version: "2.0"
+    stage: "etapa_1"
 
 # ------------------------------------------------------------
 # Output

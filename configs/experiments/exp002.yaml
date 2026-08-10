@@ -1,6 +1,7 @@
 # ============================================================
 # Experimento 002: Random Forest + Ruta B
 # ============================================================
+# ETAPA 1: Experimentos Iniciales
 # Descripción: Modelo no lineal con las 109 features que RF
 #              considera importantes en contexto multivariado.
 #              Set exploratorio, mayor complejidad.
@@ -9,11 +10,12 @@
 experiment:
   name: "exp002_random_forest_route_b"
   description: "Random Forest con 109 features de Ruta B (RF importance directo)"
-  version: "1.0"
+  version: "2.0"
   author: "Jair"
+  stage: "etapa_1"
 
 # ------------------------------------------------------------
-# Datos
+# Datos — 2-way split (train/test)
 # ------------------------------------------------------------
 data:
   dataset: "application_train_preprocessed.csv"
@@ -21,8 +23,8 @@ data:
   target: "TARGET"
   id_column: "SK_ID_CURR"
   
+  # Split — 2-way: train (80%) / test (20%)
   test_size: 0.2
-  validation_size: 0.2
   random_state: 42
   stratify: True
 
@@ -71,6 +73,8 @@ mlflow:
     feature_count: 109
     model_type: "tree_based"
     notebook_source: "07_feature_selection.ipynb"
+    version: "2.0"
+    stage: "etapa_1"
 
 # ------------------------------------------------------------
 # Output

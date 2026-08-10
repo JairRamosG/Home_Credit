@@ -1,6 +1,7 @@
 # ============================================================
 # Experimento 001: Logistic Regression + Ruta A
 # ============================================================
+# ETAPA 1: Experimentos Iniciales
 # Descripción: Modelo lineal con las 14 features que pasaron
 #              tests estadísticos Y son útiles en contexto RF.
 #              Set conservador, bajo riesgo.
@@ -9,11 +10,12 @@
 experiment:
   name: "exp001_logistic_route_a"
   description: "Logistic Regression con 14 features de Ruta A (tests + RF importance)"
-  version: "1.0"
+  version: "2.0"
   author: "Jair"
+  stage: "etapa_1"
 
 # ------------------------------------------------------------
-# Datos
+# Datos — 2-way split (train/test)
 # ------------------------------------------------------------
 data:
   dataset: "application_train_preprocessed.csv"
@@ -21,9 +23,8 @@ data:
   target: "TARGET"
   id_column: "SK_ID_CURR"
   
-  # Split — 3-way: train (60%) / validation (20%) / test (20%)
+  # Split — 2-way: train (80%) / test (20%)
   test_size: 0.2
-  validation_size: 0.2
   random_state: 42
   stratify: true
 
@@ -70,6 +71,8 @@ mlflow:
     feature_count: 14
     model_type: "linear"
     notebook_source: "07_feature_selection.ipynb"
+    version: "2.0"
+    stage: "etapa_1"
 
 # ------------------------------------------------------------
 # Output

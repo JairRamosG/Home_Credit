@@ -1,6 +1,7 @@
 # ============================================================
 # Experimento 004: Random Forest + Top 30 Route B
 # ============================================================
+# ETAPA 1: Experimentos Iniciales
 # Descripción: Random Forest con las 30 features más importantes
 #              de Ruta B. Balance entre complejidad (109 features)
 #              y simplicidad (14 features).
@@ -9,11 +10,12 @@
 experiment:
   name: "exp004_random_forest_top30"
   description: "Random Forest con Top 30 features de Ruta B"
-  version: "1.0"
+  version: "2.0"
   author: "Home Credit Team"
+  stage: "etapa_1"
 
 # ------------------------------------------------------------
-# Datos
+# Datos — 2-way split (train/test)
 # ------------------------------------------------------------
 data:
   dataset: "application_train_preprocessed.csv"
@@ -21,8 +23,8 @@ data:
   target: "TARGET"
   id_column: "SK_ID_CURR"
   
+  # Split — 2-way: train (80%) / test (20%)
   test_size: 0.2
-  validation_size: 0.2
   random_state: 42
   stratify: true
 
@@ -71,6 +73,8 @@ mlflow:
     feature_count: 30
     model_type: "tree_based"
     notebook_source: "07_feature_selection.ipynb"
+    version: "2.0"
+    stage: "etapa_1"
 
 # ------------------------------------------------------------
 # Output
