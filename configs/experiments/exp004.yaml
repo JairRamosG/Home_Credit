@@ -10,8 +10,8 @@
 experiment:
   name: "exp004_random_forest_top30"
   description: "Random Forest con Top 30 features de Ruta B"
-  version: "2.0"
-  author: "Home Credit Team"
+  version: "3.0"
+  author: "Jair"
   stage: "etapa_1"
 
 # ------------------------------------------------------------
@@ -48,7 +48,7 @@ model:
 # Métricas a evaluar
 # ------------------------------------------------------------
 metrics:
-  primary: "roc_auc"
+  primary: "recall"
   
   all:
     - name: "accuracy"

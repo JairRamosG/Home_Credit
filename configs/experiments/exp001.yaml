@@ -10,7 +10,7 @@
 experiment:
   name: "exp001_logistic_route_a"
   description: "Logistic Regression con 14 features de Ruta A (tests + RF importance)"
-  version: "2.0"
+  version: "3.0"
   author: "Jair"
   stage: "etapa_1"
 
@@ -46,7 +46,7 @@ model:
 # Métricas a evaluar
 # ------------------------------------------------------------
 metrics:
-  primary: "roc_auc"  # Métrica principal para comparar
+  primary: "recall"  # Métrica principal: detectar defaults
   
   all:
     - name: "accuracy"
@@ -58,7 +58,7 @@ metrics:
     - name: "f1"
       description: "Balance precision/recall"
     - name: "roc_auc"
-      description: "Área bajo la curva ROC (principal)"
+      description: "Área bajo la curva ROC"
 
 # ------------------------------------------------------------
 # MLflow Tracking
@@ -71,8 +71,9 @@ mlflow:
     feature_count: 14
     model_type: "linear"
     notebook_source: "07_feature_selection.ipynb"
-    version: "2.0"
+    version: "3.0"
     stage: "etapa_1"
+    primary_metric: "recall"
 
 # ------------------------------------------------------------
 # Output
