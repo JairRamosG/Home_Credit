@@ -6,14 +6,11 @@ Funciones para cargar:
 1. Archivos YAML de configuración
 2. Dataset preprocesado
 3. Listas de features desde archivos .txt
-
-Este módulo NO hace transformaciones, solo carga.
 """
 
 import pandas as pd
 import yaml
 from pathlib import Path
-
 
 # ============================================================
 # Rutas base del proyecto
@@ -122,10 +119,7 @@ def load_experiment(experiment_name: str) -> tuple:
     
     Ejemplo:
         config, df, features = load_experiment("exp001")
-        
-        # Ahora tenés todo listo para:
-        # - Seleccionar features: X = df[features]
-        # - Obtener target: y = df[config['data']['target']]
+
     """
     print("=" * 60)
     print(f"Cargando experimento: {experiment_name}")
