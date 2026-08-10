@@ -1,0 +1,114 @@
+# ============================================================
+# Experimento 001: Tuning de XGBoost (basado en exp003)
+# ============================================================
+# ETAPA 2: Tuneo de Hiperparámetros
+# Descripción: Tuning de hiperparámetros para XGBoost usando
+#              GridSearchCV con 5-fold cross-validation.
+#              Basado en exp003 (XGBoost + features de intersección).
+# ============================================================
+
+experiment:
+  name: "exp001_xgboost_tuning"
+  description: "Tuning de XGBoost con GridSearchCV (5-fold CV) — basado en exp003"
+  version: "3.0"
+  author: "Jair"
+  stage: "etapa_2"
+  base_experiment: "exp003_inicial"  # Experimento base que se está tuneando
+
+# ------------------------------------------------------------
+# Datos — 2-way split (train/test)
+# ------------------------------------------------------------
+data:
+  dataset: "application_train_preprocessed.csv"
+  features_file: "features_intersection.txt"  # 14 features (mismo que exp003)
+  target: "TARGET"
+  id_column: "SK_ID_CURR"
+  
+  test_size: 0.2
+  random_state: 42
+  stratify: true
+
+# ------------------------------------------------------------
+# Modelo base (será reemplazado por GridSearchCV)
+# ------------------------------------------------------------
+model:
+  name: "xgboost.XGBClassifier"
+  description: "XGBoost — hiperparámetros definidos por GridSearchCV"
+  
+  # Params base (se usan como referencia, no para entrenar)
+  params:
+    random_state: 42
+    n_jobs: -1
+    eval_metric: "auc"  # XGBoost solo acepta: auc, logloss, error, etc.
+
+# ------------------------------------------------------------
+# GridSearchCV
+# ------------------------------------------------------------
+tuning:
+  enabled: true
+  method: "grid"  # "grid" o "random"
+  
+  # Grid de hiperparámetros
+  # El prefijo "model__" indica que son params del modelo dentro del Pipeline
+  param_grid:
+    model__n_estimators: [200, 300, 500]
+    model__max_depth: [4, 6, 8]
+    model__learning_rate: [0.05, 0.1, 0.2]
+    model__subsample: [0.8, 0.9]
+    model__colsample_bytree: [0.8, 0.9]
+  
+  # Configuración de CV
+  cv: 5
+  scoring: "recall"  # sklearn sí acepta "recall"
+  n_jobs: -1
+  verbose: 1
+  
+  # Si method="random", cuántas combinaciones probar
+  n_iter: 50
+
+# ------------------------------------------------------------
+# Métricas a evaluar
+# ------------------------------------------------------------
+metrics:
+  primary: "recall"
+  
+  all:
+    - name: "accuracy"
+      description: "Exactitud general"
+    - name: "precision"
+      description: "¿Cuántos predichos como default realmente lo son?"
+    - name: "recall"
+      description: "¿Cuántos defaults reales detectamos?"
+    - name: "f1"
+      description: "Balance precision/recall"
+    - name: "roc_auc"
+      description: "Área bajo la curva ROC"
+
+# ------------------------------------------------------------
+# MLflow Tracking
+# ------------------------------------------------------------
+mlflow:
+  experiment_name: "home_credit_default"
+  
+  tags:
+    feature_set: "intersection"
+    feature_count: 14
+    model_type: "gradient_boosting"
+    tuning_method: "grid_search_cv"
+    cv_folds: 5
+    notebook_source: "07_feature_selection.ipynb"
+    version: "3.0"
+    stage: "etapa_2"
+
+# ------------------------------------------------------------
+# Output
+# ------------------------------------------------------------
+output:
+  save_model: true
+  model_path: "models/exp001_xgboost_tuned.pkl"
+  
+  save_cv_results: true
+  cv_results_path: "experiments/results/exp001_cv_results.csv"
+  
+  save_predictions: true
+  predictions_path: "experiments/results/exp001_predictions.csv"
