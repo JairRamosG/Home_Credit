@@ -33,14 +33,25 @@ def load_config(experiment_name: str) -> dict:
     
     Ejemplo:
         config = load_config("exp001")
-        config = load_config("configs/experiments/exp001.yaml")
+        config = load_config("configs/experiments/baseline/exp001")
     """
     # Si ya es una ruta completa
     if experiment_name.endswith(".yaml"):
         yaml_path = Path(experiment_name)
-    else:
-        # Construir ruta desde el nombre
+    elif "/" in experiment_name or "." in experiment_name:
+        # Ruta explícita con subcarpetas
         yaml_path = CONFIG_DIR / f"{experiment_name}.yaml"
+    else:
+        # Buscar recursivamente en todas las subcarpetas
+        yaml_path = None
+        for candidate in CONFIG_DIR.rglob(f"{experiment_name}.yaml"):
+            yaml_path = candidate
+            break
+        
+        if yaml_path is None:
+            raise FileNotFoundError(
+                f"No se encontró el experimento '{experiment_name}' en {CONFIG_DIR}"
+            )
     
     if not yaml_path.exists():
         raise FileNotFoundError(f"No se encontró el archivo: {yaml_path}")
@@ -48,7 +59,7 @@ def load_config(experiment_name: str) -> dict:
     with open(yaml_path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
     
-    print(f"Configuración cargada: {yaml_path.name}")
+    print(f"Configuración cargada: {yaml_path}")
     return config
 
 

@@ -173,8 +173,11 @@ def run_experiment(experiment_name: str, verbose: bool = True):
 def discover_experiments():
     config_dir = Path("configs/experiments")
     experiments = []
-    for yaml_file in config_dir.glob("*.yaml"):
-        experiments.append(yaml_file.stem)  # "exp001.yaml" → "exp001"
+    for yaml_file in config_dir.rglob("*.yaml"):
+        # Obtener nombre relativo sin extensión
+        # ej: baseline/exp001 o tuning/exp005_tuning
+        rel_path = yaml_file.relative_to(config_dir)
+        experiments.append(str(rel_path.with_suffix("")))
     return sorted(experiments)
 
 
