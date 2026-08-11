@@ -1,0 +1,116 @@
+# ============================================================
+# Experimento 006: Tuning de XGBoost + SMOTE
+# ============================================================
+# ETAPA 2: Tuneo de Hiperparámetros con SMOTE
+# Descripción: Tuning de hiperparámetros para XGBoost usando
+#              GridSearchCV con 5-fold cross-validation.
+#              SMOTE se aplica DENTRO del pipeline para evitar data leakage.
+# ============================================================
+
+experiment:
+  name: "exp006_xgboost_smote_tuning"
+  description: "Tuning de XGBoost con GridSearchCV + SMOTE (5-fold CV)"
+  version: "1.0"
+  author: "Jair"
+  stage: "etapa_2"
+  base_experiment: "exp006_inicial"
+
+# ------------------------------------------------------------
+# Datos — 2-way split (train/test)
+# ------------------------------------------------------------
+data:
+  dataset: "application_train_preprocessed.csv"
+  features_file: "features_route_b.txt"
+  target: "TARGET"
+  id_column: "SK_ID_CURR"
+  
+  test_size: 0.2
+  random_state: 42
+  stratify: true
+
+# ------------------------------------------------------------
+# SMOTE
+# ------------------------------------------------------------
+smote:
+  enabled: true
+  random_state: 42
+  sampling_strategy: 0.5
+  k_neighbors: 5
+
+# ------------------------------------------------------------
+# Modelo base (será reemplazado por GridSearchCV)
+# ------------------------------------------------------------
+model:
+  name: "xgboost.XGBClassifier"
+  description: "XGBoost — hiperparámetros definidos por GridSearchCV"
+  
+  params:
+    random_state: 42
+    n_jobs: -1
+    eval_metric: "auc"
+    scale_pos_weight: 11.38
+
+# ------------------------------------------------------------
+# GridSearchCV
+# ------------------------------------------------------------
+tuning:
+  enabled: true
+  method: "grid"
+  
+  param_grid:
+    model__n_estimators: [200, 300, 500]
+    model__max_depth: [4, 6, 8]
+    model__learning_rate: [0.05, 0.1, 0.2]
+    model__subsample: [0.8, 0.9]
+    model__colsample_bytree: [0.8, 0.9]
+  
+  cv: 5
+  scoring: "recall"
+  n_jobs: -1
+  verbose: 1
+
+# ------------------------------------------------------------
+# Métricas a evaluar
+# ------------------------------------------------------------
+metrics:
+  primary: "recall"
+  
+  all:
+    - name: "accuracy"
+      description: "Exactitud general"
+    - name: "precision"
+      description: "¿Cuántos predichos como default realmente lo son?"
+    - name: "recall"
+      description: "¿Cuántos defaults reales detectamos?"
+    - name: "f1"
+      description: "Balance precision/recall"
+    - name: "roc_auc"
+      description: "Área bajo la curva ROC"
+
+# ------------------------------------------------------------
+# MLflow Tracking
+# ------------------------------------------------------------
+mlflow:
+  experiment_name: "home_credit_default"
+  
+  tags:
+    feature_set: "route_b"
+    feature_count: 109
+    model_type: "gradient_boosting"
+    smote_enabled: true
+    tuning_method: "grid_search_cv"
+    cv_folds: 5
+    stage: "etapa_2"
+
+# ------------------------------------------------------------
+# Output
+# ------------------------------------------------------------
+output:
+  save_model: true
+  model_path: "models/exp006_xgboost_smote_tuned.pkl"
+  
+  save_cv_results: true
+  cv_results_path: "experiments/results/exp006_smote_cv_results.csv"
+  
+  save_predictions: true
+  predictions_path: "experiments/results/exp006_smote_predictions.csv"

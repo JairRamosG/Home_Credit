@@ -1,0 +1,117 @@
+# ============================================================
+# Experimento 006: Ajuste de Umbral + SMOTE
+# ============================================================
+# ETAPA 3: Ajuste de Umbral con SMOTE
+# Descripción: Busca el mejor threshold de clasificación para
+#              maximizar recall usando el validation set.
+#              Basado en los mejores hiperparámetros de exp006_tuning.
+#
+# IMPORTANTE: Este script usa el VALIDATION SET para buscar el umbral.
+#             El test se reserva para ETAPA 4 (evaluación final).
+# ============================================================
+
+experiment:
+  name: "exp006_umbral_smote"
+  description: "Ajuste de umbral para maximizar recall — basado en exp006_tuning"
+  version: "1.0"
+  author: "Jair"
+  stage: "etapa_3"
+  base_experiment: "exp006_tuning"
+
+# ------------------------------------------------------------
+# Datos — 3-way split (train/val/test)
+# ------------------------------------------------------------
+data:
+  dataset: "application_train_preprocessed.csv"
+  features_file: "features_route_b.txt"
+  target: "TARGET"
+  id_column: "SK_ID_CURR"
+  
+  test_size: 0.2
+  validation_size: 0.2
+  random_state: 42
+  stratify: true
+
+# ------------------------------------------------------------
+# SMOTE
+# ------------------------------------------------------------
+smote:
+  enabled: true
+  random_state: 42
+  sampling_strategy: 0.5
+  k_neighbors: 5
+
+# ------------------------------------------------------------
+# Modelo — Mejores hiperparámetros de exp006_tuning
+# ------------------------------------------------------------
+model:
+  name: "xgboost.XGBClassifier"
+  description: "XGBoost con mejores hiperparámetros del tuning + SMOTE"
+  
+  params:
+    n_estimators: 500
+    max_depth: 4
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    scale_pos_weight: 11.38
+    random_state: 42
+    n_jobs: -1
+    eval_metric: "auc"
+
+# ------------------------------------------------------------
+# Threshold Tuning
+# ------------------------------------------------------------
+evaluation:
+  thresholds:
+    min: 0.10
+    max: 0.50
+    step: 0.05
+  
+  primary_metric: "recall"
+
+# ------------------------------------------------------------
+# Métricas a evaluar
+# ------------------------------------------------------------
+metrics:
+  primary: "recall"
+  
+  all:
+    - name: "accuracy"
+      description: "Exactitud general"
+    - name: "precision"
+      description: "¿Cuántos predichos como default realmente lo son?"
+    - name: "recall"
+      description: "¿Cuántos defaults reales detectamos?"
+    - name: "f1"
+      description: "Balance precision/recall"
+    - name: "roc_auc"
+      description: "Área bajo la curva ROC"
+
+# ------------------------------------------------------------
+# MLflow Tracking
+# ------------------------------------------------------------
+mlflow:
+  experiment_name: "home_credit_default"
+  
+  tags:
+    feature_set: "route_b"
+    feature_count: 109
+    model_type: "gradient_boosting"
+    smote_enabled: true
+    tuning_method: "threshold_search"
+    eval_set: "validation"
+    stage: "etapa_3"
+
+# ------------------------------------------------------------
+# Output
+# ------------------------------------------------------------
+output:
+  save_model: true
+  model_path: "models/exp006_umbral_smote.pkl"
+  
+  save_predictions: true
+  predictions_path: "experiments/results/exp006_umbral_smote_predictions.csv"
+  
+  save_threshold_results: true
+  threshold_results_path: "experiments/results/exp006_smote_threshold_results.csv"

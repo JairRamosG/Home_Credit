@@ -1,0 +1,118 @@
+# ============================================================
+# Experimento 006: Evaluación Final + SMOTE
+# ============================================================
+# ETAPA 4: Evaluación Final con SMOTE
+# Descripción: Evalúa el modelo final en el TEST SET usando
+#              los mejores hiperparámetros de exp006_tuning
+#              y el mejor threshold de exp006_umbral.
+#
+# IMPORTANTE: Este script:
+#   1. Combina Train + Validation = Nuevo Train (80%)
+#   2. Entrena el modelo final con SMOTE en ese 80%
+#   3. Evalúa en TEST SET (20%) — evaluación final
+#
+# El test set es el MISMO que se usó en ETAPA 3.
+# ============================================================
+
+experiment:
+  name: "exp006_final_smote"
+  description: "Evaluación final del modelo XGBoost + SMOTE en TEST SET"
+  version: "1.0"
+  author: "Jair"
+  stage: "etapa_4"
+  base_experiment: "exp006_tuning"
+  threshold_source: "exp006_umbral"
+
+# ------------------------------------------------------------
+# Datos — 3-way split (train/val/test)
+# ------------------------------------------------------------
+data:
+  dataset: "application_train_preprocessed.csv"
+  features_file: "features_route_b.txt"
+  target: "TARGET"
+  id_column: "SK_ID_CURR"
+  
+  test_size: 0.2
+  validation_size: 0.2
+  random_state: 42
+  stratify: true
+
+# ------------------------------------------------------------
+# SMOTE
+# ------------------------------------------------------------
+smote:
+  enabled: true
+  random_state: 42
+  sampling_strategy: 0.5
+  k_neighbors: 5
+
+# ------------------------------------------------------------
+# Modelo — Mejores hiperparámetros de exp006_tuning
+# ------------------------------------------------------------
+model:
+  name: "xgboost.XGBClassifier"
+  description: "XGBoost con mejores hiperparámetros del tuning + SMOTE + threshold"
+  
+  params:
+    n_estimators: 500
+    max_depth: 4
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    scale_pos_weight: 11.38
+    random_state: 42
+    n_jobs: -1
+    eval_metric: "auc"
+
+# ------------------------------------------------------------
+# Evaluación — Threshold fijo de exp006_umbral
+# ------------------------------------------------------------
+evaluation:
+  threshold: 0.1
+  eval_set: "test"
+
+# ------------------------------------------------------------
+# Métricas a evaluar
+# ------------------------------------------------------------
+metrics:
+  primary: "recall"
+  
+  all:
+    - name: "accuracy"
+      description: "Exactitud general"
+    - name: "precision"
+      description: "¿Cuántos predichos como default realmente lo son?"
+    - name: "recall"
+      description: "¿Cuántos defaults reales detectamos?"
+    - name: "f1"
+      description: "Balance precision/recall"
+    - name: "roc_auc"
+      description: "Área bajo la curva ROC"
+
+# ------------------------------------------------------------
+# MLflow Tracking
+# ------------------------------------------------------------
+mlflow:
+  experiment_name: "home_credit_default"
+  
+  tags:
+    feature_set: "route_b"
+    feature_count: 109
+    model_type: "gradient_boosting"
+    smote_enabled: true
+    threshold: 0.1
+    eval_set: "test"
+    stage: "etapa_4"
+
+# ------------------------------------------------------------
+# Output
+# ------------------------------------------------------------
+output:
+  save_model: true
+  model_path: "models/exp006_final_smote.pkl"
+  
+  save_predictions: true
+  predictions_path: "experiments/results/exp006_final_smote_predictions.csv"
+  
+  save_feature_importance: true
+  feature_importance_path: "experiments/results/exp006_final_smote_feature_importance.csv"
