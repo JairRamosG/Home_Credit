@@ -172,6 +172,7 @@ def log_to_mlflow(config: dict, df_results: pd.DataFrame, pipeline, eval_set_nam
     mlflow.set_experiment(experiment_name)
     
     model_name = get_model_name(config)
+    full_model_name = config["model"]["name"]  # Nombre completo: "xgboost.XGBClassifier"
     run_name = f"{config['experiment']['name']}_threshold_tuning"
     
     with mlflow.start_run(run_name=run_name):
@@ -226,7 +227,7 @@ def log_to_mlflow(config: dict, df_results: pd.DataFrame, pipeline, eval_set_nam
             "artifact_path": "model",
         }
         
-        if "xgboost" in model_name.lower():
+        if "xgboost" in full_model_name.lower():
             log_kwargs["skops_trusted_types"] = [
                 "xgboost.core.Booster",
                 "xgboost.sklearn.XGBClassifier",
