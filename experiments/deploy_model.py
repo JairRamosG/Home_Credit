@@ -171,12 +171,28 @@ def deploy_model(experiment_name: str, output_path: str = None):
             "artifact_path": "model",
             "registered_model_name": config["mlflow"].get("registered_model_name", None)
         }
+        
+        # Lista de trusted types según el modelo y configuración
+        trusted_types = []
+        
         if "xgboost" in model_name:
-            log_kwargs["skops_trusted_types"] = [
+            trusted_types.extend([
                 "xgboost.core.Booster",
                 "xgboost.sklearn.XGBClassifier",
                 "xgboost.sklearn.XGBRegressor"
-            ]
+            ])
+        
+        if smote_config.get('enabled', False):
+            trusted_types.extend([
+                "imblearn.pipeline.Pipeline",
+                "imblearn.over_sampling._smote.base.SMOTE",
+                "sklearn.metrics._dist_metrics.EuclideanDistance64",
+                "sklearn.neighbors._kd_tree.KDTree"
+            ])
+        
+        if trusted_types:
+            log_kwargs["skops_trusted_types"] = trusted_types
+        
         mlflow.sklearn.log_model(**log_kwargs)
     
     print("\n" + "=" * 70)

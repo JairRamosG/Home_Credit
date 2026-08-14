@@ -126,18 +126,34 @@ def log_to_mlflow(config: dict, search, best_metrics: dict, cv_results_df: pd.Da
         
         # 7. Loggear modelo mejorado
         model_name = config["model"]["name"].lower()
+        smote_config = config.get('smote', {})
+        smote_enabled = smote_config.get('enabled', False)
         
         log_model_kwargs = {
             "sk_model": search.best_estimator_,
             "artifact_path": "best_model"
         }
         
+        # Lista de trusted types según el modelo y configuración
+        trusted_types = []
+        
         if "xgboost" in model_name:
-            log_model_kwargs["skops_trusted_types"] = [
+            trusted_types.extend([
                 "xgboost.core.Booster",
                 "xgboost.sklearn.XGBClassifier",
                 "xgboost.sklearn.XGBRegressor"
-            ]
+            ])
+        
+        if smote_enabled:
+            trusted_types.extend([
+                "imblearn.pipeline.Pipeline",
+                "imblearn.over_sampling._smote.base.SMOTE",
+                "sklearn.metrics._dist_metrics.EuclideanDistance64",
+                "sklearn.neighbors._kd_tree.KDTree"
+            ])
+        
+        if trusted_types:
+            log_model_kwargs["skops_trusted_types"] = trusted_types
         
         mlflow.sklearn.log_model(**log_model_kwargs)
         

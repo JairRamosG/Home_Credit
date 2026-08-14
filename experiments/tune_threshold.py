@@ -239,17 +239,34 @@ def log_to_mlflow(config: dict, df_results: pd.DataFrame, pipeline, eval_set_nam
         mlflow.set_tag("eval_set", eval_set_name)
         
         # 7. Loggear modelo
+        smote_config = config.get('smote', {})
+        smote_enabled = smote_config.get('enabled', False)
+        
         log_kwargs = {
             "sk_model": pipeline,
             "artifact_path": "model",
         }
         
+        # Lista de trusted types según el modelo y configuración
+        trusted_types = []
+        
         if "xgboost" in full_model_name.lower():
-            log_kwargs["skops_trusted_types"] = [
+            trusted_types.extend([
                 "xgboost.core.Booster",
                 "xgboost.sklearn.XGBClassifier",
                 "xgboost.sklearn.XGBRegressor"
-            ]
+            ])
+        
+        if smote_enabled:
+            trusted_types.extend([
+                "imblearn.pipeline.Pipeline",
+                "imblearn.over_sampling._smote.base.SMOTE",
+                "sklearn.metrics._dist_metrics.EuclideanDistance64",
+                "sklearn.neighbors._kd_tree.KDTree"
+            ])
+        
+        if trusted_types:
+            log_kwargs["skops_trusted_types"] = trusted_types
         
         mlflow.sklearn.log_model(**log_kwargs)
         
