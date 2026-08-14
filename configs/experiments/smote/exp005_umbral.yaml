@@ -1,0 +1,73 @@
+experiment:
+  name: exp005_umbral
+  description: Ajuste de umbral — basado en exp005_tuning
+  version: '1.0'
+  author: Jair
+  stage: etapa_3
+  base_experiment: exp005_tuning
+data:
+  dataset: application_train_preprocessed.csv
+  features_file: features_route_b.txt
+  target: TARGET
+  id_column: SK_ID_CURR
+  test_size: 0.2
+  validation_size: 0.2
+  random_state: 42
+  stratify: true
+smote:
+  enabled: true
+  random_state: 42
+  sampling_strategy: 0.5
+  k_neighbors: 5
+model:
+  name: xgboost.XGBClassifier
+  description: Modelo con mejores hiperparámetros del tuning
+  params:
+    colsample_bytree: 0.9
+    learning_rate: 0.05
+    max_depth: 4
+    n_estimators: 200
+    subsample: 0.8
+    random_state: 42
+    n_jobs: -1
+    eval_metric: auc
+    scale_pos_weight: 11.38
+evaluation:
+  thresholds:
+    min: 0.1
+    max: 0.5
+    step: 0.05
+  primary_metric: recall
+metrics:
+  primary: recall
+  all:
+  - name: accuracy
+    description: Exactitud general
+  - name: precision
+    description: ¿Cuántos predichos como default realmente lo son?
+  - name: recall
+    description: ¿Cuántos defaults reales detectamos?
+  - name: f1
+    description: Balance precision/recall
+  - name: roc_auc
+    description: Área bajo la curva ROC
+mlflow:
+  experiment_name: home_credit_default
+  tags:
+    feature_set: route_b
+    feature_count: 109
+    model_type: gradient_boosting
+    smote_enabled: true
+    tuning_method: threshold_search
+    cv_folds: 5
+    notebook_source: 07_feature_selection.ipynb
+    version: '1.0'
+    stage: etapa_3
+    eval_set: validation
+output:
+  save_model: true
+  model_path: models/exp005_umbral.pkl
+  save_predictions: true
+  predictions_path: experiments/results/exp005_umbral_predictions.csv
+  save_threshold_results: true
+  threshold_results_path: experiments/results/exp005_threshold_results.csv

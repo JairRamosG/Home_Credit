@@ -53,7 +53,8 @@ def get_tuning_runs(smote: bool = True):
     if smote:
         filter_parts.append("tags.smote_enabled = 'True'")
     else:
-        filter_parts.append("tags.smote_enabled = 'False'")
+        # Buscar runs donde smote_enabled NO existe o es 'False'
+        filter_parts.append("tags.smote_enabled != 'True'")
     
     filter_string = " AND ".join(filter_parts)
     
