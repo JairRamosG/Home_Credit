@@ -2,22 +2,23 @@
 query_best_params.py — Consultar mejores hiperparámetros
 ========================================================
 
-Consulta MLflow para obtener los mejores hiperparámetros de un tuning run.
+Script de solo lectura que consulta MLflow para mostrar los mejores
+hiperparámetros encontrados en el tuning.
 
-Flujo profesional:
-
-    1. tune_experiment.py = busca hiperparámetros y guarda en MLflow
-    2. query_best_params.py = consulta MLflow 
+Flujo:
+    1. tune_experiment.py: Busca hiperparámetros y guarda en MLflow
+    2. query_best_params.py: Consulta MLflow y muestra resultados
+    3. generate_experiment.py: Genera YAML del siguiente paso
 
 Uso:
-    # Generar YAML para threshold tuning (desde exp005_tuning con SMOTE)
-    python experiments/query_best_params.py  --smote
+    # Listar todos los runs de tuning con SMOTE
+    python experiments/query_best_params.py --list --smote
 
-    # Solo imprimir parámetros (sin generar YAML)
+    # Mostrar mejores parámetros del run ganador
     python experiments/query_best_params.py --smote
 
-    # Listar todos los runs de tuning
-    python experiments/query_best_params.py --list
+    # Consultar un run específico por ID
+    python experiments/query_best_params.py --run-id abc123 --smote
 """
 
 import sys
