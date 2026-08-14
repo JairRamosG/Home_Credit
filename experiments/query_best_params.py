@@ -1,18 +1,17 @@
 """
-query_best_params.py — Consultar mejores hiperparámetros y generar experimento
-===============================================================================
+query_best_params.py — Consultar mejores hiperparámetros
+========================================================
 
-Consulta MLflow para obtener los mejores hiperparámetros de un tuning run
-y genera automáticamente el YAML para el siguiente experimento (threshold tuning).
+Consulta MLflow para obtener los mejores hiperparámetros de un tuning run.
 
 Flujo profesional:
-  1. tune_experiment.py → busca hiperparámetros → guarda en MLflow
-  2. query_best_params.py → consulta MLflow → genera YAML del siguiente paso
-  3. tune_threshold.py → usa el YAML generado
+
+    1. tune_experiment.py = busca hiperparámetros y guarda en MLflow
+    2. query_best_params.py = consulta MLflow 
 
 Uso:
     # Generar YAML para threshold tuning (desde exp005_tuning con SMOTE)
-    python experiments/query_best_params.py --next-threshold --smote
+    python experiments/query_best_params.py  --smote
 
     # Solo imprimir parámetros (sin generar YAML)
     python experiments/query_best_params.py --smote
@@ -26,7 +25,6 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 
-# Agregar raíz del proyecto al path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -38,9 +36,6 @@ import yaml
 # Constantes
 # ============================================================
 EXPERIMENT_NAME = "home_credit_default"
-OUTPUT_DIR = PROJECT_ROOT / "configs" / "experiments" / "smote"
-TEMPLATE_PATH = PROJECT_ROOT / "configs" / "experiments" / "baseline" / "exp005_umbral.yaml"
-
 
 def get_tuning_runs(smote: bool = True):
     """
@@ -100,61 +95,19 @@ def get_best_params(run_id: str):
     return model_params, run.data.params, run.data.metrics
 
 
-def generate_threshold_yaml(model_params: dict, run_id: str, smote: bool = True):
-    """
-    Genera el YAML para threshold tuning usando los mejores parámetros.
-    
-    Args:
-        model_params: Parámetros del modelo (sin prefijo 'model__')
-        run_id: ID del run de tuning (para documentar)
-        smote: Si True, incluye configuración SMOTE
-    """
-    # Leer template
-    with open(TEMPLATE_PATH, 'r') as f:
-        template = yaml.safe_load(f)
-    
-    # Actualizar nombre del experimento
-    template['experiment']['name'] = 'exp005_umbral'
-    template['experiment']['description'] = (
-        f'Ajuste de umbral — basado en exp005_tuning (run: {run_id[:8]})'
-    )
-    template['experiment']['base_experiment'] = 'exp005_tuning'
-    template['experiment']['version'] = '3.0'
-    template['experiment']['author'] = 'Jair'
-    
-    # Actualizar parámetros del modelo con los mejores del tuning
-    template['model']['params'].update(model_params)
-    template['model']['params']['random_state'] = 42
-    template['model']['params']['n_jobs'] = -1
-    template['model']['params']['eval_metric'] = 'auc'
-    
-    # Mantener scale_pos_weight si existe
-    if 'scale_pos_weight' not in template['model']['params']:
-        template['model']['params']['scale_pos_weight'] = 11.38
-    
-    # Guardar YAML
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_path = OUTPUT_DIR / f"exp005_umbral.yaml"
-    
-    with open(output_path, 'w') as f:
-        yaml.dump(template, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
-    
-    return output_path
-
-
 def print_params(model_params: dict, all_params: dict, metrics: dict, run_id: str):
     """Imprime los parámetros de forma formateada."""
     print("\n" + "=" * 70)
     print(f"  MEJORES HIPERPARÁMETROS (run: {run_id[:8]})")
     print("=" * 70)
     
-    print("\n📊 Métricas del run:")
+    print("\nMétricas del run:")
     print(f"  - Recall (CV):     {metrics.get('cv_best_score', 'N/A')}")
     print(f"  - Recall (test):   {metrics.get('recall', 'N/A')}")
     print(f"  - F1 (test):       {metrics.get('f1', 'N/A')}")
     print(f"  - ROC AUC (test):  {metrics.get('roc_auc', 'N/A')}")
     
-    print("\n🔧 Mejores parámetros del modelo:")
+    print("\nMejores parámetros del modelo:")
     for param, value in model_params.items():
         print(f"  - {param}: {value}")
     
@@ -166,7 +119,7 @@ def list_runs(smote: bool = True):
     runs = get_tuning_runs(smote)
     
     if runs.empty:
-        print("\n⚠️  No se encontraron runs de tuning.")
+        print("\nNo se encontraron runs de tuning.")
         return
     
     smote_label = "CON SMOTE" if smote else "SIN SMOTE"
@@ -200,11 +153,6 @@ def main():
         help="Listar todos los runs de tuning"
     )
     parser.add_argument(
-        "--next-threshold",
-        action="store_true",
-        help="Generar YAML para threshold tuning"
-    )
-    parser.add_argument(
         "--smote",
         action="store_true",
         help="Filtrar runs con SMOTE habilitado"
@@ -226,8 +174,8 @@ def main():
     runs = get_tuning_runs(smote=args.smote)
     
     if runs.empty:
-        print("\n⚠️  No se encontraron runs de tuning.")
-        print("   Asegurate de haber ejecutado tune_experiment.py primero.")
+        print("\n No se encontraron runs de tuning.")
+        print("   Asegurar que se ejecuto un tune_experiment.py primero.")
         return
     
     # Seleccionar run
@@ -235,7 +183,7 @@ def main():
         # Buscar run específico
         run_row = runs[runs['run_id'].str.startswith(args.run_id)]
         if run_row.empty:
-            print(f"\n❌ No se encontró run con ID: {args.run_id}")
+            print(f"\n No se encontró run con ID: {args.run_id}")
             return
         run_id = run_row.iloc[0]['run_id']
     else:
@@ -247,14 +195,6 @@ def main():
     
     # Imprimir parámetros
     print_params(model_params, all_params, metrics, run_id)
-    
-    # Modo: generar YAML para threshold tuning
-    if args.next_threshold:
-        output_path = generate_threshold_yaml(model_params, run_id, smote=args.smote)
-        print(f"\n✅ YAML generado: {output_path}")
-        print(f"\nPróximo paso:")
-        print(f"  python experiments/tune_threshold.py exp005_umbral")
-    
     print()
 
 
