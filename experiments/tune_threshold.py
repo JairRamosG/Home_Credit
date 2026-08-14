@@ -173,7 +173,12 @@ def log_to_mlflow(config: dict, df_results: pd.DataFrame, pipeline, eval_set_nam
     
     model_name = get_model_name(config)
     full_model_name = config["model"]["name"]  # Nombre completo: "xgboost.XGBClassifier"
-    run_name = f"{config['experiment']['name']}_threshold_tuning"
+    
+    # Determinar sufijo SMOTE para el run name
+    smote_config = config.get('smote', {})
+    smote_suffix = "_smote" if smote_config.get('enabled', False) else ""
+    
+    run_name = f"{config['experiment']['name']}_threshold_tuning{smote_suffix}"
     
     with mlflow.start_run(run_name=run_name):
         # 1. Loggear parámetros del modelo
@@ -197,7 +202,19 @@ def log_to_mlflow(config: dict, df_results: pd.DataFrame, pipeline, eval_set_nam
             "eval_set": eval_set_name
         })
         
-        # 4. Loggear mejor umbral por métrica
+        # 4. Loggear configuración SMOTE si está habilitada
+        smote_config = config.get('smote', {})
+        if smote_config.get('enabled', False):
+            mlflow.log_params({
+                "smote_enabled": True,
+                "smote_sampling_strategy": smote_config.get('sampling_strategy', 0.5),
+                "smote_k_neighbors": smote_config.get('k_neighbors', 5),
+                "smote_random_state": smote_config.get('random_state', 42)
+            })
+        else:
+            mlflow.log_param("smote_enabled", False)
+        
+        # 5. Loggear mejor umbral por métrica
         best_roc_auc = df_results.loc[df_results['roc_auc'].idxmax()]
         best_f1 = df_results.loc[df_results['f1'].idxmax()]
         best_recall = df_results.loc[df_results['recall'].idxmax()]

@@ -141,11 +141,27 @@ def deploy_model(experiment_name: str, output_path: str = None):
     # 6. Registrar en MLflow (opcional)
     mlflow.set_experiment(config["mlflow"]["experiment_name"])
     
-    with mlflow.start_run(run_name=f"deploy_{experiment_name}"):
+    # Determinar sufijo SMOTE para el run name
+    smote_config = config.get('smote', {})
+    smote_suffix = "_smote" if smote_config.get('enabled', False) else ""
+    
+    with mlflow.start_run(run_name=f"deploy_{experiment_name}{smote_suffix}"):
         mlflow.log_params(config["model"]["params"])
         mlflow.log_param("threshold", model_artifact["threshold"])
         mlflow.log_param("dataset_rows", len(X))
         mlflow.log_param("deployed", True)
+        
+        # Loggear configuración SMOTE si está habilitada
+        if smote_config.get('enabled', False):
+            mlflow.log_params({
+                "smote_enabled": True,
+                "smote_sampling_strategy": smote_config.get('sampling_strategy', 0.5),
+                "smote_k_neighbors": smote_config.get('k_neighbors', 5),
+                "smote_random_state": smote_config.get('random_state', 42)
+            })
+        else:
+            mlflow.log_param("smote_enabled", False)
+        
         mlflow.log_metrics(metrics)
         
         # Loggear modelo

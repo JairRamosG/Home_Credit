@@ -84,7 +84,11 @@ def log_to_mlflow(config: dict, search, best_metrics: dict, cv_results_df: pd.Da
         best_metrics: Métricas del mejor modelo en test
         cv_results_df: DataFrame con resultados de CV
     """
-    with mlflow.start_run(run_name=f"tuning_{config['experiment']['name']}"):
+    # Determinar sufijo SMOTE para el run name
+    smote_config = config.get('smote', {})
+    smote_suffix = "_smote" if smote_config.get('enabled', False) else ""
+    
+    with mlflow.start_run(run_name=f"tuning_{config['experiment']['name']}{smote_suffix}"):
         # 1. Loggear mejores hiperparámetros
         mlflow.log_params(search.best_params_)
         
@@ -104,11 +108,23 @@ def log_to_mlflow(config: dict, search, best_metrics: dict, cv_results_df: pd.Da
             "features_file": config["data"]["features_file"]
         })
         
-        # 5. Loggear tags
+        # 5. Loggear configuración SMOTE si está habilitada
+        smote_config = config.get('smote', {})
+        if smote_config.get('enabled', False):
+            mlflow.log_params({
+                "smote_enabled": True,
+                "smote_sampling_strategy": smote_config.get('sampling_strategy', 0.5),
+                "smote_k_neighbors": smote_config.get('k_neighbors', 5),
+                "smote_random_state": smote_config.get('random_state', 42)
+            })
+        else:
+            mlflow.log_param("smote_enabled", False)
+        
+        # 6. Loggear tags
         if "tags" in config["mlflow"]:
             mlflow.set_tags(config["mlflow"]["tags"])
         
-        # 6. Loggear modelo mejorado
+        # 7. Loggear modelo mejorado
         model_name = config["model"]["name"].lower()
         
         log_model_kwargs = {
