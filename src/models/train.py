@@ -6,11 +6,20 @@ Funciones para:
 1. Crear modelos dinámicamente desde configuración YAML
 2. Envolver en Pipeline con StandardScaler
 3. Entrenar modelos
+4. Soporte configurable para SMOTE (imblearn)
 """
 
 import importlib
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+
+# Imblearn para SMOTE (opcional)
+try:
+    from imblearn.pipeline import Pipeline as ImbPipeline
+    from imblearn.over_sampling import SMOTE
+    IMBLEARN_AVAILABLE = True
+except ImportError:
+    IMBLEARN_AVAILABLE = False
 
 
 def create_model(config: dict):
@@ -48,15 +57,50 @@ def create_model(config: dict):
     return model
 
 
-def create_pipeline(config: dict) -> Pipeline:
+def create_smote(config: dict):
     """
-    Crea un Pipeline con StandardScaler + Modelo.
+    Crea una instancia de SMOTE desde la configuración YAML.
     
     Args:
         config: Diccionario de configuración del experimento
     
     Returns:
-        Pipeline listo para entrenar
+        Instancia de SMOTE o None si no está habilitado
+    
+    Raises:
+        ImportError: Si imblearn no está instalado
+    """
+    smote_config = config.get('smote', {})
+    
+    if not smote_config.get('enabled', False):
+        return None
+    
+    if not IMBLEARN_AVAILABLE:
+        raise ImportError(
+            "imblearn no está instalado. Instalar con: pip install imbalanced-learn"
+        )
+    
+    params = {
+        'random_state': smote_config.get('random_state', 42),
+        'sampling_strategy': smote_config.get('sampling_strategy', 0.5),
+        'k_neighbors': smote_config.get('k_neighbors', 5)
+    }
+    
+    return SMOTE(**params)
+
+
+def create_pipeline(config: dict):
+    """
+    Crea un Pipeline configurable: StandardScaler + [SMOTE] + Modelo.
+    
+    Si smote.enabled=true en la config, usa imblearn.Pipeline con paso SMOTE.
+    Si smote.enabled=false o no existe, usa sklearn.Pipeline estándar.
+    
+    Args:
+        config: Diccionario de configuración del experimento
+    
+    Returns:
+        Pipeline listo para entrenar (sklearn o imblearn según config)
     
     Ejemplo:
         pipeline = create_pipeline(config)
@@ -65,11 +109,22 @@ def create_pipeline(config: dict) -> Pipeline:
     # Crear modelo
     model = create_model(config)
     
-    # Crear pipeline: Escalar → Modelo
-    pipeline = Pipeline([
-        ('scaler', StandardScaler()),
-        ('model', model)
-    ])
+    # Verificar si SMOTE está habilitado
+    smote = create_smote(config)
+    
+    if smote is not None:
+        # Pipeline con SMOTE: Escalar → SMOTE → Modelo
+        pipeline = ImbPipeline([
+            ('scaler', StandardScaler()),
+            ('smote', smote),
+            ('model', model)
+        ])
+    else:
+        # Pipeline estándar: Escalar → Modelo
+        pipeline = Pipeline([
+            ('scaler', StandardScaler()),
+            ('model', model)
+        ])
     
     return pipeline
 
@@ -107,6 +162,13 @@ def train_model(
     print(f"Parámetros:")
     for key, value in params.items():
         print(f"  - {key}: {value}")
+    
+    # Info de SMOTE si está habilitado
+    smote_config = config.get('smote', {})
+    if smote_config.get('enabled', False):
+        print(f"\nSMOTE habilitado:")
+        print(f"  - sampling_strategy: {smote_config.get('sampling_strategy', 0.5)}")
+        print(f"  - k_neighbors: {smote_config.get('k_neighbors', 5)}")
     
     # Crear pipeline
     pipeline = create_pipeline(config)

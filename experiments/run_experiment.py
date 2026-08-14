@@ -75,14 +75,26 @@ def log_to_mlflow(config: dict, metrics: dict, pipeline, run_name: str):
             mlflow.log_param("threshold", float(threshold))
             mlflow.log_param("eval_set", "test")
         
-        # 4. Loggear métricas
+        # 4. Loggear configuración SMOTE si está habilitada
+        smote_config = config.get('smote', {})
+        if smote_config.get('enabled', False):
+            mlflow.log_params({
+                "smote_enabled": True,
+                "smote_sampling_strategy": smote_config.get('sampling_strategy', 0.5),
+                "smote_k_neighbors": smote_config.get('k_neighbors', 5),
+                "smote_random_state": smote_config.get('random_state', 42)
+            })
+        else:
+            mlflow.log_param("smote_enabled", False)
+        
+        # 5. Loggear métricas
         mlflow.log_metrics(metrics)
         
-        # 5. Loggear tags
+        # 6. Loggear tags
         if "tags" in config["mlflow"]:
             mlflow.set_tags(config["mlflow"]["tags"])
         
-        # 6. Loggear modelo
+        # 7. Loggear modelo
         model_name = config["model"]["name"].lower()
         
         # XGBoost necesita trusted types para skops
@@ -158,7 +170,9 @@ def run_experiment(experiment_name: str, verbose: bool = True):
     
     # 6. Registrar en MLflow
     model_name = get_model_name(config)
-    run_name = f"{experiment_name}_{model_name}"
+    smote_config = config.get('smote', {})
+    smote_suffix = "_smote" if smote_config.get('enabled', False) else ""
+    run_name = f"{experiment_name}_{model_name}{smote_suffix}"
     
     setup_mlflow(config)
     log_to_mlflow(config, metrics, pipeline, run_name)
