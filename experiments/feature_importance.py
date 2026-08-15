@@ -102,23 +102,48 @@ def load_model_from_run(run_id: str):
     return model, feature_names, run.data
 
 
+def extract_model(pipeline):
+    """
+    Extrae el modelo final de un Pipeline de scikit-learn.
+    
+    Args:
+        pipeline: Objeto Pipeline o modelo
+    
+    Returns:
+        Modelo final (XGBClassifier, RandomForest, etc.)
+    """
+    # Si es un Pipeline, extraer el último paso
+    if hasattr(pipeline, 'steps'):
+        # Pipeline tiene una lista de pasos: [('scaler', ...), ('smote', ...), ('model', ...)]
+        model_name, model = pipeline.steps[-1]
+        return model
+    else:
+        # Ya es un modelo directo
+        return pipeline
+
+
 def get_feature_importance(model, feature_names):
     """
     Extrae la importancia de features del modelo.
     
     Args:
-        model: Modelo entrenado (XGBoost, RandomForest, etc.)
+        model: Modelo entrenado (XGBoost, RandomForest, etc.) o Pipeline
         feature_names: Lista de nombres de features
     
     Returns:
         DataFrame con features y su importancia
     """
+    # Extraer el modelo real si es un Pipeline
+    real_model = extract_model(model)
+    
     # Obtener importancia del modelo
-    if hasattr(model, 'feature_importances_'):
-        importance = model.feature_importances_
-    elif hasattr(model, 'coef_'):
-        importance = np.abs(model.coef_[0])
+    if hasattr(real_model, 'feature_importances_'):
+        importance = real_model.feature_importances_
+    elif hasattr(real_model, 'coef_'):
+        importance = np.abs(real_model.coef_[0])
     else:
+        print(f"Tipo de modelo: {type(real_model)}")
+        print(f"Attributes disponibles: {[a for a in dir(real_model) if not a.startswith('_')]}")
         raise ValueError("El modelo no tiene attribute feature_importances_ o coef_")
     
     # Crear DataFrame
