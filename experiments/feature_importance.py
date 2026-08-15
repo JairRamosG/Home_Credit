@@ -39,6 +39,38 @@ RESULTS_DIR = PROJECT_ROOT / "experiments" / "results"
 # Funciones auxiliares
 # ============================================================
 
+def resolve_run_id(run_id: str) -> str:
+    """
+    Resuelve un run ID truncado (8 caracteres) al ID completo (32 caracteres).
+    
+    Args:
+        run_id: ID del run (puede estar truncado)
+    
+    Returns:
+        ID completo del run
+    """
+    # Si ya tiene 32 caracteres, es el ID completo
+    if len(run_id) == 32:
+        return run_id
+    
+    # Buscar runs que empiecen con el ID truncado
+    client = mlflow.MlflowClient()
+    experiment = client.get_experiment_by_name(EXPERIMENT_NAME)
+    
+    if experiment is None:
+        raise ValueError(f"Experimento '{EXPERIMENT_NAME}' no encontrado en MLflow")
+    
+    runs = client.search_runs(
+        experiment_ids=[experiment.experiment_id],
+        filter_string=f"run_id LIKE '{run_id}%'"
+    )
+    
+    if len(runs) == 0:
+        raise ValueError(f"No se encontró ningún run con ID que empiece con: {run_id}")
+    
+    return runs[0].info.run_id
+
+
 def load_model_from_run(run_id: str):
     """
     Carga el modelo y feature names desde un run de MLflow.
