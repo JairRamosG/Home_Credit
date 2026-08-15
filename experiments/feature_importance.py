@@ -32,7 +32,7 @@ import mlflow.sklearn
 # ============================================================
 EXPERIMENT_NAME = "home_credit_default"
 FIGURES_DIR = PROJECT_ROOT / "experiments" / "figures"
-RESULTS_DIR = PROJECT_ROOT / "experiment" / "results"
+RESULTS_DIR = PROJECT_ROOT / "experiments" / "results"
 
 
 # ============================================================
@@ -44,15 +44,18 @@ def load_model_from_run(run_id: str):
     Carga el modelo y feature names desde un run de MLflow.
     
     Args:
-        run_id: ID del run en MLflow
+        run_id: ID del run en MLflow (puede estar truncado)
     
     Returns:
         Tupla de (model, feature_names, run_data)
     """
-    run = mlflow.get_run(run_id)
+    # Resolver ID truncado si es necesario
+    full_run_id = resolve_run_id(run_id)
+    
+    run = mlflow.get_run(full_run_id)
     
     # Cargar modelo
-    model_uri = f"runs:/{run_id}/best_model"
+    model_uri = f"runs:/{full_run_id}/best_model"
     model = mlflow.sklearn.load_model(model_uri)
     
     # Intentar obtener feature names de los tags o params
@@ -102,7 +105,7 @@ def get_feature_importance(model, feature_names):
 # Gráficas profesionales
 # ============================================================
 
-def create_importance_plot(df_importance, top_n, experiment_name):
+def create_importance_plot(df_importance, top_n, experiment_name, model):
     """
     Gráfica de barras horizontal con las top N features.
     """
@@ -126,8 +129,8 @@ def create_importance_plot(df_importance, top_n, experiment_name):
     ax.set_xlabel('Importancia', fontsize=12, fontweight='bold')
     ax.set_ylabel('Feature', fontsize=12, fontweight='bold')
     ax.set_title(f'Top {top_n} Feature Importance — {experiment_name}\n'
-                 f'(Modelo: {get_model_type(df_importance)})',
-                 fontsize=14, fontweight='bold', pad=15)
+                f'(Modelo: {get_model_type(model)})',
+                fontsize=14, fontweight='bold', pad=15)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.grid(axis='x', alpha=0.3, linestyle='--')
@@ -158,7 +161,7 @@ def create_cumulative_plot(df_importance, experiment_name):
     # Línea de acumulado
     ax2 = ax1.twinx()
     ax2.plot(x, df_importance['cumulative_pct'], color='#F44336', linewidth=2.5, 
-             label='Importancia acumulada')
+            label='Importancia acumulada')
     ax2.set_ylabel('Importancia Acumulada (%)', fontsize=12, fontweight='bold', color='#F44336')
     ax2.tick_params(axis='y', labelcolor='#F44336')
     ax2.set_ylim([0, 1.05])
@@ -174,8 +177,8 @@ def create_cumulative_plot(df_importance, experiment_name):
     
     # Configuración
     ax1.set_title(f'Importancia Acumulada — {experiment_name}\n'
-                  f'¿Cuántas features necesitás?',
-                  fontsize=14, fontweight='bold', pad=15)
+                f'Numero de features',
+                fontsize=14, fontweight='bold', pad=15)
     
     # Leyendas
     lines1, labels1 = ax1.get_legend_handles_labels()
@@ -188,15 +191,43 @@ def create_cumulative_plot(df_importance, experiment_name):
     # Fecha
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
     ax1.text(0.98, 0.02, timestamp, transform=ax1.transAxes,
-             fontsize=8, color='gray', ha='right', va='bottom')
+            fontsize=8, color='gray', ha='right', va='bottom')
     
     plt.tight_layout()
     return fig
 
 
-def get_model_type(df_importance):
-    """Detecta el tipo de modelo (placeholder)."""
-    return "XGBoost"
+def get_model_type(model):
+    """
+    Detecta el tipo de modelo.
+    
+    Args:
+        model: Modelo o Pipeline
+    
+    Returns:
+        Nombre del tipo de modelo
+    """
+    # Extraer modelo real si es Pipeline
+    if hasattr(model, 'steps'):
+        model = model.steps[-1][1]
+    
+    class_name = type(model).__name__
+    
+    # Mapear nombres comunes
+    model_map = {
+        'XGBClassifier': 'XGBoost',
+        'XGBRegressor': 'XGBoost',
+        'RandomForestClassifier': 'Random Forest',
+        'RandomForestRegressor': 'Random Forest',
+        'GradientBoostingClassifier': 'Gradient Boosting',
+        'LGBMClassifier': 'LightGBM',
+        'LGBMRegressor': 'LightGBM',
+        'LogisticRegression': 'Logistic Regression',
+        ' SVC': 'SVM',
+        'LinearSVC': 'Linear SVM',
+    }
+    
+    return model_map.get(class_name, class_name)
 
 
 # ============================================================
@@ -266,25 +297,25 @@ def analyze_feature_importance(run_id: str, top_n: int = 30, output_csv: bool = 
     smote_suffix = "_smote" if run_data.params.get('smote_enabled', 'False') == 'True' else "_baseline"
     
     # Gráfica 1: Top N features
-    fig1 = create_importance_plot(df_importance, top_n, f"Run {run_id[:8]}")
+    fig1 = create_importance_plot(df_importance, top_n, f"Run {run_id[:8]}", model)
     path_fig1 = FIGURES_DIR / f"feature_importance{smote_suffix}_top{top_n}.png"
     fig1.savefig(path_fig1, dpi=150, bbox_inches='tight', facecolor='white')
     plt.close(fig1)
-    print(f"\n✓ Gráfica guardada: {path_fig1}")
+    print(f"\nGrafica guardada: {path_fig1}")
     
     # Gráfica 2: Acumulado
     fig2 = create_cumulative_plot(df_importance, f"Run {run_id[:8]}")
     path_fig2 = FIGURES_DIR / f"feature_importance{smote_suffix}_cumulative.png"
     fig2.savefig(path_fig2, dpi=150, bbox_inches='tight', facecolor='white')
     plt.close(fig2)
-    print(f"✓ Gráfica acumulada guardada: {path_fig2}")
+    print(f"Grafica acumulada guardada: {path_fig2}")
     
     # 6. Guardar CSV
     if output_csv:
         RESULTS_DIR.mkdir(parents=True, exist_ok=True)
         csv_path = RESULTS_DIR / f"feature_importance{smote_suffix}.csv"
         df_importance.to_csv(csv_path, index=False)
-        print(f"✓ CSV guardado: {csv_path}")
+        print(f"CSV guardado: {csv_path}")
     
     print("\n" + "=" * 70)
     print("  ANÁLISIS COMPLETADO")
