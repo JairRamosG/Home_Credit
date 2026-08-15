@@ -1,0 +1,92 @@
+# ============================================================
+# Experimento 008: XGBoost + Top 50 Features
+# ============================================================
+# ETAPA 1: Experimentos Iniciales
+# Descripción: XGBoost con las 50 features más importantes
+#              de Ruta B. Mismos hiperparámetros que exp003.
+# ============================================================
+
+experiment:
+  name: "exp008_xgboost_top50"
+  description: "XGBoost con 50 features top de Route B"
+  version: "3.0"
+  author: "Jair"
+  stage: "etapa_1"
+
+# ------------------------------------------------------------
+# Datos — 2-way split (train/test)
+# ------------------------------------------------------------
+data:
+  dataset: "application_train_preprocessed.csv"
+  features_file: "features_top50.txt"  # 50 features
+  target: "TARGET"
+  id_column: "SK_ID_CURR"
+  
+  # Split — 2-way: train (80%) / test (20%)
+  test_size: 0.2
+  random_state: 42
+  stratify: true
+
+# ------------------------------------------------------------
+# Modelo
+# ------------------------------------------------------------
+model:
+  name: "xgboost.XGBClassifier"
+  description: "XGBoost con scale_pos_weight para desbalanceo"
+  
+  params:
+    n_estimators: 200
+    max_depth: 6              # Menor que RF (XGBoost es más propenso a overfitting)
+    learning_rate: 0.1        # Tasa de aprendizaje
+    subsample: 0.8            # Submuestreo de filas
+    colsample_bytree: 0.8     # Submuestreo de columnas
+    scale_pos_weight: 11.38   # ratio = 282686/24825 (balancear clases)
+    random_state: 42
+    n_jobs: -1
+    eval_metric: "auc"
+
+# ------------------------------------------------------------
+# Métricas a evaluar
+# ------------------------------------------------------------
+metrics:
+  primary: "recall"  # Métrica principal: detectar defaults
+  
+  all:
+    - name: "accuracy"
+      description: "Exactitud general"
+    - name: "precision"
+      description: "¿Cuántos predichos como default realmente lo son?"
+    - name: "recall"
+      description: "¿Cuántos defaults reales detectamos?"
+    - name: "f1"
+      description: "Balance precision/recall"
+    - name: "roc_auc"
+      description: "Área bajo la curva ROC (principal)"
+
+# ------------------------------------------------------------
+# MLflow Tracking
+# ------------------------------------------------------------
+mlflow:
+  experiment_name: "home_credit_default"
+  
+  tags:
+    feature_set: "top50"
+    feature_count: 50
+    model_type: "gradient_boosting"
+    notebook_source: "07_feature_selection.ipynb"
+    version: "3.0"
+    stage: "etapa_1"
+    primary_metric: "recall"
+
+# ------------------------------------------------------------
+# Output
+# ------------------------------------------------------------
+output:
+  save_model: true
+  model_path: "models/exp008_xgboost_top50.pkl"
+  
+  save_predictions: true
+  predictions_path: "experiments/results/exp008_predictions.csv"
+  
+  save_feature_importance: true
+  feature_importance_path: "experiments/results/exp008_feature_importance.csv"

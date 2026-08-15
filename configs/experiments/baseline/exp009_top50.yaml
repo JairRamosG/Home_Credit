@@ -1,0 +1,89 @@
+# ============================================================
+# Experimento 009: Random Forest + Top 50 Features (Balance)
+# ============================================================
+# ETAPA 1: Experimentos Iniciales
+# Descripción: Random Forest con las 50 features más importantes
+#              de Ruta B. Mismos hiperparámetros que exp004.
+# ============================================================
+
+experiment:
+  name: "exp009_random_forest_top50_balance"
+  description: "Random Forest con 50 features top de Route B (Balance)"
+  version: "3.0"
+  author: "Jair"
+  stage: "etapa_1"
+
+# ------------------------------------------------------------
+# Datos — 2-way split (train/test)
+# ------------------------------------------------------------
+data:
+  dataset: "application_train_preprocessed.csv"
+  features_file: "features_top50.txt"  # 50 features
+  target: "TARGET"
+  id_column: "SK_ID_CURR"
+  
+  # Split — 2-way: train (80%) / test (20%)
+  test_size: 0.2
+  random_state: 42
+  stratify: true
+
+# ------------------------------------------------------------
+# Modelo
+# ------------------------------------------------------------
+model:
+  name: "sklearn.ensemble.RandomForestClassifier"
+  description: "Random Forest con las 50 features más importantes"
+  
+  params:
+    n_estimators: 200
+    max_depth: 10
+    min_samples_split: 10
+    min_samples_leaf: 5
+    class_weight: "balanced"
+    random_state: 42
+    n_jobs: -1
+
+# ------------------------------------------------------------
+# Métricas a evaluar
+# ------------------------------------------------------------
+metrics:
+  primary: "recall"
+  
+  all:
+    - name: "accuracy"
+      description: "Exactitud general"
+    - name: "precision"
+      description: "¿Cuántos predichos como default realmente lo son?"
+    - name: "recall"
+      description: "¿Cuántos defaults reales detectamos?"
+    - name: "f1"
+      description: "Balance precision/recall"
+    - name: "roc_auc"
+      description: "Área bajo la curva ROC (principal)"
+
+# ------------------------------------------------------------
+# MLflow Tracking
+# ------------------------------------------------------------
+mlflow:
+  experiment_name: "home_credit_default"
+  
+  tags:
+    feature_set: "top50"
+    feature_count: 50
+    model_type: "tree_based"
+    notebook_source: "07_feature_selection.ipynb"
+    version: "3.0"
+    stage: "etapa_1"
+
+# ------------------------------------------------------------
+# Output
+# ------------------------------------------------------------
+output:
+  save_model: true
+  model_path: "models/exp009_random_forest_top50_balance.pkl"
+  
+  save_predictions: true
+  predictions_path: "experiments/results/exp009_predictions.csv"
+  
+  save_feature_importance: true
+  feature_importance_path: "experiments/results/exp009_feature_importance.csv"
