@@ -81,37 +81,40 @@ def get_smote_suffix(config):
 def create_confusion_matrix_plot(y_true, y_pred, threshold, experiment_name, set_name="Validation"):
     """
     Gráfica 1: Matriz de Confusión
-    Muestra TP, TN, FP, FN.
+    Layout: TP FN / FP TN (estándar de negocio)
     """
     cm = confusion_matrix(y_true, y_pred)
     tn, fp, fn, tp = cm.ravel()
     
-    fig, ax = plt.subplots(figsize=(8, 6))
+    # Reorganizar a layout: [[TP, FN], [FP, TN]]
+    cm_display = np.array([[tp, fn], [fp, tn]])
+    
+    fig, ax = plt.subplots(figsize=(10, 7))
     
     # Crear matriz con colores
-    im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-    ax.figure.colorbar(im, ax=ax)
+    im = ax.imshow(cm_display, interpolation='nearest', cmap=plt.cm.Blues)
+    ax.figure.colorbar(im, ax=ax, shrink=0.8)
     
     # Configurar ejes
-    classes = ['No Default (0)', 'Default (1)']
+    classes = ['Default (1)', 'No Default (0)']
     ax.set(xticks=[0, 1], yticks=[0, 1],
-        xticklabels=classes, yticklabels=classes,
-        xlabel='Predicción', ylabel='Valor Real',
-        title=f'Matriz de Confusión — {experiment_name}\n{set_name} Set (θ={threshold:.2f})')
+           xticklabels=classes, yticklabels=classes,
+           xlabel='Predicción', ylabel='Valor Real',
+           title=f'Matriz de Confusión — {experiment_name}\n{set_name} Set (θ={threshold:.2f})')
     
     # Rotar labels
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
     
     # Agregar valores en cada celda
-    thresh = cm.max() / 2.
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(j, i, format(cm[i, j], 'd'),
+    thresh = cm_display.max() / 2.
+    for i in range(cm_display.shape[0]):
+        for j in range(cm_display.shape[1]):
+            ax.text(j, i, format(cm_display[i, j], 'd'),
                     ha="center", va="center",
-                    color="white" if cm[i, j] > thresh else "black",
-                    fontsize=16, fontweight='bold')
+                    color="white" if cm_display[i, j] > thresh else "black",
+                    fontsize=18, fontweight='bold')
     
-    # Agregar métricas como texto
+    # Agregar métricas como texto (fuera de la matriz)
     total = tn + fp + fn + tp
     accuracy = (tp + tn) / total
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
@@ -125,15 +128,17 @@ def create_confusion_matrix_plot(y_true, y_pred, threshold, experiment_name, set
         f'F1-Score:  {f1:.3f}'
     )
     
-    ax.text(1.05, 0.5, metrics_text, transform=ax.transAxes,
-            fontsize=10, verticalalignment='center',
-            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    # Posicionar métricas a la derecha, centradas verticalmente
+    ax.text(1.35, 0.5, metrics_text, transform=ax.transAxes,
+            fontsize=11, verticalalignment='center',
+            bbox=dict(boxstyle='round,pad=0.5', facecolor='lightyellow', edgecolor='gray', alpha=0.9))
     
     # Fecha
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
     ax.text(0.98, 0.02, timestamp, transform=ax.transAxes,
             fontsize=8, color='gray', ha='right', va='bottom')
     
+    plt.subplots_adjust(right=0.7)
     plt.tight_layout()
     return fig
 
