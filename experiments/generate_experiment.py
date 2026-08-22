@@ -7,7 +7,7 @@ de MLflow y genera el YAML para el siguiente experimento (ej: threshold).
 
 Flujo:
     1.- exp00X_tuning.yaml (2-way split)
-    2.- query MLflow → best_params_
+    2.- query MLflow y da best_params_
     3.- exp00X_umbral.yaml (3-way split + best_params)
 
 Uso:

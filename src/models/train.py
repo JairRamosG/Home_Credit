@@ -13,13 +13,8 @@ import importlib
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-# Imblearn para SMOTE (opcional)
-try:
-    from imblearn.pipeline import Pipeline as ImbPipeline
-    from imblearn.over_sampling import SMOTE
-    IMBLEARN_AVAILABLE = True
-except ImportError:
-    IMBLEARN_AVAILABLE = False
+from imblearn.pipeline import Pipeline as ImbPipeline
+from imblearn.over_sampling import SMOTE
 
 
 def create_model(config: dict):
@@ -75,10 +70,6 @@ def create_smote(config: dict):
     if not smote_config.get('enabled', False):
         return None
     
-    if not IMBLEARN_AVAILABLE:
-        raise ImportError(
-            "imblearn no está instalado. Instalar con: pip install imbalanced-learn"
-        )
     
     params = {
         'random_state': smote_config.get('random_state', 42),
@@ -109,18 +100,18 @@ def create_pipeline(config: dict):
     # Crear modelo
     model = create_model(config)
     
-    # Verificar si SMOTE está habilitado
+    # si SMOTE está habilitado
     smote = create_smote(config)
     
     if smote is not None:
-        # Pipeline con SMOTE: Escalar → SMOTE → Modelo
+        # Pipeline con SMOTE: Escalar + SMOTE + Modelo
         pipeline = ImbPipeline([
             ('scaler', StandardScaler()),
             ('smote', smote),
             ('model', model)
         ])
     else:
-        # Pipeline estándar: Escalar → Modelo
+        # Pipeline normal: Escalar + Modelo
         pipeline = Pipeline([
             ('scaler', StandardScaler()),
             ('model', model)
@@ -143,7 +134,7 @@ def train_model(
         y_train: Target de entrenamiento
     
     Returns:
-        Pipeline entrenado
+        Pipeline ya entrenado
     
     Ejemplo:
         config, df, features = load_experiment("exp001")
@@ -176,7 +167,7 @@ def train_model(
 
     
     # Entrenar
-    print(f"\nEntrenando con {X_train.shape[0]:,} muestras...")
+    print(f"\nEntrenando con {X_train.shape[0]:,} muestras")
     pipeline.fit(X_train, y_train)
     
     # Verificar que entrenó
